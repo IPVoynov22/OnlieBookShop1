@@ -1,31 +1,89 @@
-html {
-  font-size: 14px;
-}
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+:root {
+  --bg-cream: #F7F5F0;
+  --forest-green: #1B3B2B;
+  --forest-green-hover: #132B1E;
+  --terracotta: #B86B4D;
+  --text-dark: #2B2B2B;
+  --card-bg: #EFECE6;
 }
 
 body {
-  margin-bottom: 60px;
+  background-color: var(--bg-cream);
+  color: var(--text-dark);
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+
+h1, h2, h3, .serif-text {
+  font-family: 'Playfair Display', serif;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+
+.announcement-bar {
+  background-color: var(--forest-green);
+  color: #ffffff;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  padding: 6px 0;
+  text-align: center;
+}
+
+/* Модерна навигация */
+.navbar-brand-ig {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--text-dark) !important;
+  text-decoration: none;
+}
+
+.brand-badge {
+  border: 1px solid var(--text-dark);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  margin-right: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.nav-link-ig {
+  color: var(--text-dark) !important;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0 10px;
+  transition: color 0.2s;
+}
+
+.nav-link-ig:hover {
+  color: var(--terracotta) !important;
+}
+
+
+.hero-card {
+  background-color: var(--card-bg);
+  border-radius: 16px;
+  overflow: hidden;
+  padding: 3rem;
+}
+
+.btn-forest {
+  background-color: var(--forest-green);
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-weight: 500;
+  border: none;
+  transition: background-color 0.2s;
+}
+
+.btn-forest:hover {
+  background-color: var(--forest-green-hover);
+  color: #ffffff;
 }

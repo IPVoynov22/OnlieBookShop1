@@ -2,7 +2,45 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<!-- Hero Секция от дизайна на ivelin.georgi -->
+<div class="row align-items-center g-0 hero-card shadow-sm my-3" style="background-color: #EFECE6; border-radius: 16px; overflow: hidden;">
+    <!-- Дясна част (на мобилни) / Лява част (на десктоп) - Текст и бутон -->
+    <div class="col-lg-6 p-4 p-md-5">
+        <span class="text-uppercase fw-bold text-muted small tracking-wide d-block mb-3" style="letter-spacing: 1.5px; color: #B86B4D !important;">
+            Independent Booksellers
+        </span>
+        <h1 class="display-4 serif-text fw-normal mb-3" style="color: #1B3B2B; line-height: 1.15;">
+            Good books, <br />
+            <span style="font-style: italic; color: #B86B4D;">chosen with care.</span>
+        </h1>
+        <p class="text-secondary mb-4 fs-6 style-text" style="max-width: 400px; color: #555 !important;">
+            A small, thoughtful collection of stories and ideas worth making time for.
+        </p>
+        <a asp-controller="Books" asp-action="Index" class="btn text-white px-4 py-2 text-decoration-none fw-medium" style="background-color: #1B3B2B; border-radius: 8px;">
+            Browse books &rarr;
+        </a>
+    </div>
+
+    <!-- Дясна част - Снимка на книжарницата -->
+    <div class="col-lg-6 p-0">
+        <img src="https://images.unsplash.com/photo-1507842220194-c36b80145620?q=80&w=1000&auto=format&fit=crop" 
+             alt="Bookstore interior" 
+             class="img-fluid w-100 h-100 object-fit-cover" 
+             style="min-height: 380px; max-height: 480px; border-top-right-radius: 16px; border-bottom-right-radius: 16px;" />
+    </div>
+</div>
+
+<!-- Секция за популярни книги (Popular Books) -->
+<div class="mt-5 pt-3">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <span class="text-uppercase fw-bold text-muted small tracking-wide d-block mb-1" style="letter-spacing: 1.5px; color: #B86B4D !important;">
+                Our Selection
+            </span>
+            <h2 class="serif-text mb-0" style="color: #1B3B2B;">Popular books</h2>
+        </div>
+        <a asp-controller="Books" asp-action="Index" class="text-decoration-none fw-bold small" style="color: #1B3B2B;">
+            View all books &rarr;
+        </a>
+    </div>
 </div>

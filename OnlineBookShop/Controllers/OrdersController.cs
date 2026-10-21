@@ -10,7 +10,7 @@ using OnlineBookShop.Models;
 
 namespace OnlineBookShop.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize] // Всеки логнат потребител може да създава/преглежда поръчки
     public class OrdersController : Controller
     {
         private readonly BookWorldDbContext _context;
@@ -20,11 +20,22 @@ namespace OnlineBookShop.Controllers
             _context = context;
         }
 
-        // GET: Orders
+        // GET: Orders (Админ вижда всички поръчки, потребителят вижда само своите)
         public async Task<IActionResult> Index()
         {
-            var bookWorldDbContext = _context.Orders.Include(o => o.Customer);
-            return View(await bookWorldDbContext.ToListAsync());
+            if (User.IsInRole("Admin"))
+            {
+                var allOrders = _context.Orders.Include(o => o.Customer);
+                return View(await allOrders.ToListAsync());
+            }
+
+            // Намираме имейла на логнатия потребител
+            var userEmail = User.Identity?.Name;
+            var userOrders = _context.Orders
+                .Include(o => o.Customer)
+                .Where(o => o.Customer.Email == userEmail);
+
+            return View(await userOrders.ToListAsync());
         }
 
         // GET: Orders/Details/5
@@ -38,6 +49,7 @@ namespace OnlineBookShop.Controllers
             var order = await _context.Orders
                 .Include(o => o.Customer)
                 .FirstOrDefaultAsync(m => m.OrderId == id);
+
             if (order == null)
             {
                 return NotFound();
@@ -49,13 +61,11 @@ namespace OnlineBookShop.Controllers
         // GET: Orders/Create
         public IActionResult Create()
         {
-            ViewData["CustomerId"] = new SelectList(_context.Customers, "CustomerId", "CustomerId");
+            ViewData["CustomerId"] = new SelectList(_context.Customers, "CustomerId", "Email");
             return View();
         }
 
         // POST: Orders/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("OrderId,OrderDate,TotalAmount,OrderStatus,CustomerId")] Order order)
@@ -66,11 +76,12 @@ namespace OnlineBookShop.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["CustomerId"] = new SelectList(_context.Customers, "CustomerId", "CustomerId", order.CustomerId);
+            ViewData["CustomerId"] = new SelectList(_context.Customers, "CustomerId", "Email", order.CustomerId);
             return View(order);
         }
 
-        // GET: Orders/Edit/5
+        // GET: Orders/Edit/5 (Само за Админ)
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -83,15 +94,14 @@ namespace OnlineBookShop.Controllers
             {
                 return NotFound();
             }
-            ViewData["CustomerId"] = new SelectList(_context.Customers, "CustomerId", "CustomerId", order.CustomerId);
+            ViewData["CustomerId"] = new SelectList(_context.Customers, "CustomerId", "Email", order.CustomerId);
             return View(order);
         }
 
-        // POST: Orders/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST: Orders/Edit/5 (Само за Админ)
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id, [Bind("OrderId,OrderDate,TotalAmount,OrderStatus,CustomerId")] Order order)
         {
             if (id != order.OrderId)
@@ -119,11 +129,12 @@ namespace OnlineBookShop.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["CustomerId"] = new SelectList(_context.Customers, "CustomerId", "CustomerId", order.CustomerId);
+            ViewData["CustomerId"] = new SelectList(_context.Customers, "CustomerId", "Email", order.CustomerId);
             return View(order);
         }
 
-        // GET: Orders/Delete/5
+        // GET: Orders/Delete/5 (Само за Админ)
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -142,9 +153,10 @@ namespace OnlineBookShop.Controllers
             return View(order);
         }
 
-        // POST: Orders/Delete/5
+        // POST: Orders/Delete/5 (Само за Админ)
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var order = await _context.Orders.FindAsync(id);

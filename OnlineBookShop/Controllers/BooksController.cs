@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ using OnlineBookShop.Models;
 
 namespace OnlineBookShop.Controllers
 {
+    [Authorize] // Всички методи изискват потребителят да е логнат
     public class BooksController : Controller
     {
         private readonly BookWorldDbContext _context;
@@ -18,11 +20,18 @@ namespace OnlineBookShop.Controllers
             _context = context;
         }
 
-        // GET: Books
-        public async Task<IActionResult> Index()
+        // GET: Books (Поддържа филтриране по категория през Navbar-а)
+        public async Task<IActionResult> Index(string category)
         {
-            var bookWorldDbContext = _context.Books.Include(b => b.Category);
-            return View(await bookWorldDbContext.ToListAsync());
+            var booksQuery = _context.Books.Include(b => b.Category).AsQueryable();
+
+            if (!string.IsNullOrEmpty(category))
+            {
+                booksQuery = booksQuery.Where(b => b.Category.CategoryName == category);
+                ViewData["CurrentCategory"] = category;
+            }
+
+            return View(await booksQuery.ToListAsync());
         }
 
         // GET: Books/Details/5
@@ -36,6 +45,7 @@ namespace OnlineBookShop.Controllers
             var book = await _context.Books
                 .Include(b => b.Category)
                 .FirstOrDefaultAsync(m => m.BookId == id);
+
             if (book == null)
             {
                 return NotFound();
@@ -45,6 +55,7 @@ namespace OnlineBookShop.Controllers
         }
 
         // GET: Books/Create
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
             ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName");
@@ -54,6 +65,7 @@ namespace OnlineBookShop.Controllers
         // POST: Books/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([Bind("BookId,Title,Author,Price,StockQuantity,CategoryId")] Book book)
         {
             if (ModelState.IsValid)
@@ -67,6 +79,7 @@ namespace OnlineBookShop.Controllers
         }
 
         // GET: Books/Edit/5
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -86,6 +99,7 @@ namespace OnlineBookShop.Controllers
         // POST: Books/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id, [Bind("BookId,Title,Author,Price,StockQuantity,CategoryId")] Book book)
         {
             if (id != book.BookId)
@@ -118,6 +132,7 @@ namespace OnlineBookShop.Controllers
         }
 
         // GET: Books/Delete/5
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -139,6 +154,7 @@ namespace OnlineBookShop.Controllers
         // POST: Books/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var book = await _context.Books.FindAsync(id);
