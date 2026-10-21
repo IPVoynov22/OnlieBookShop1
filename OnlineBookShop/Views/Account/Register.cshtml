@@ -1,0 +1,60 @@
+@model OnlineBookShop.Models.Customer
+
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="text-center mb-4">Create an Account</h2>
+                
+                
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                <form asp-action="Register" method="post">
+                    <div class="mb-3">
+                        <label asp-for="FirstName" class="form-label fw-bold">First Name</label>
+                        <input asp-for="FirstName" class="form-control" placeholder="Enter your first name" />
+                        <span asp-validation-for="FirstName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="LastName" class="form-label fw-bold">Last Name</label>
+                        <input asp-for="LastName" class="form-control" placeholder="Enter your last name" />
+                        <span asp-validation-for="LastName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label fw-bold">Email Address</label>
+                        <input asp-for="Email" class="form-control" placeholder="name@example.com" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PasswordHash" class="form-label fw-bold">Password</label>
+                        <input asp-for="PasswordHash" type="password" class="form-control" placeholder="Enter password" />
+                        
+                        <!-- Елегантна информационна кутия с изискванията за парола -->
+                        <div class="form-text text-muted mt-2 p-2 bg-light rounded border">
+                            <span class="d-block fw-semibold mb-1">Password requirements:</span>
+                            <ul class="mb-0 ps-3 small text-secondary">
+                                <li>Minimum 8 characters long</li>
+                                <li>At least one uppercase letter (A-Z)</li>
+                                <li>At least one lowercase letter (a-z)</li>
+                                <li>At least one number (0-9)</li>
+                            </ul>
+                        </div>
+                        
+                        <span asp-validation-for="PasswordHash" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">Register</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
