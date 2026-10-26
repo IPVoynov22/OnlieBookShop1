@@ -9,7 +9,7 @@ using OnlineBookShop.Models;
 
 namespace OnlineBookShop.Controllers
 {
-    [Authorize(Roles = "Admin")] // Управлението на категориите е запазено само за Администратори
+    [Authorize(Roles = "Admin")]
     public class CategoriesController : Controller
     {
         private readonly BookWorldDbContext _context;
@@ -19,13 +19,11 @@ namespace OnlineBookShop.Controllers
             _context = context;
         }
 
-        // GET: Categories
         public async Task<IActionResult> Index()
         {
             return View(await _context.Categories.ToListAsync());
         }
 
-        // GET: Categories/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -43,13 +41,11 @@ namespace OnlineBookShop.Controllers
             return View(category);
         }
 
-        // GET: Categories/Create
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Categories/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("CategoryId,CategoryName")] Category category)
@@ -63,7 +59,6 @@ namespace OnlineBookShop.Controllers
             return View(category);
         }
 
-        // GET: Categories/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -79,7 +74,6 @@ namespace OnlineBookShop.Controllers
             return View(category);
         }
 
-        // POST: Categories/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("CategoryId,CategoryName")] Category category)
@@ -112,7 +106,6 @@ namespace OnlineBookShop.Controllers
             return View(category);
         }
 
-        // GET: Categories/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -130,7 +123,6 @@ namespace OnlineBookShop.Controllers
             return View(category);
         }
 
-        // POST: Categories/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

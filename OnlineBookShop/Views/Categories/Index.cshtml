@@ -1,35 +1,44 @@
 @model IEnumerable<OnlineBookShop.Models.Category>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Categories Management";
 }
 
-<h1>Index</h1>
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span class="text-uppercase small tracking-wider" style="color: var(--terracotta); font-weight: 600;">Admin Panel</span>
+            <h2 class="serif-text display-6 mt-1" style="color: var(--forest-green);">Categories Management</h2>
+        </div>
+        <a asp-action="Create" class="btn-forest text-decoration-none" style="padding: 10px 20px; border-radius: 8px;">
+            + Add New Category
+        </a>
+    </div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.CategoryName)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.CategoryName)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.CategoryId">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.CategoryId">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.CategoryId">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+    <div class="hero-card shadow-sm border-0 p-4" style="background-color: var(--card-bg); border-radius: 16px;">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr style="border-color: #DED8CC; color: var(--forest-green);">
+                        <th class="py-3">Category Name</th>
+                        <th class="py-3 text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model) {
+                        <tr style="border-color: #DED8CC;">
+                            <td class="py-3 fw-medium" style="color: var(--text-dark);">
+                                @Html.DisplayFor(modelItem => item.CategoryName)
+                            </td>
+                            <td class="py-3 text-end">
+                                <a asp-action="Edit" asp-route-id="@item.CategoryId" class="btn btn-sm btn-outline-secondary px-3 me-1" style="border-radius: 6px;">Edit</a>
+                                <a asp-action="Details" asp-route-id="@item.CategoryId" class="btn btn-sm btn-outline-dark px-3 me-1" style="border-radius: 6px;">Details</a>
+                                <a asp-action="Delete" asp-route-id="@item.CategoryId" class="btn btn-sm px-3" style="background-color: #fae1dd; color: var(--terracotta); border-radius: 6px;">Delete</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

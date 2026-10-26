@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -8,6 +9,7 @@ using OnlineBookShop.Models;
 
 namespace OnlineBookShop.Controllers
 {
+    [AllowAnonymous]
     public class AccountController : Controller
     {
         private readonly BookWorldDbContext _context;
@@ -19,13 +21,11 @@ namespace OnlineBookShop.Controllers
             _configuration = configuration;
         }
 
-        // GET: Account/Login
         public IActionResult Login()
         {
             return View();
         }
 
-        // POST: Account/Login (Генерира JWT токен)
         [HttpPost]
         public async Task<IActionResult> Login(string email, string password)
         {
@@ -38,23 +38,26 @@ namespace OnlineBookShop.Controllers
                 return View();
             }
 
-            // Генериране на JWT Token с претенции (Claims)
             var token = GenerateJwtToken(customer);
 
-            // Запазване на токена в Header / Response за клиента
-            Response.Headers.Append("Authorization", "Bearer " + token);
+            // ЗАПАЗВАМЕ ТОКЕНА В COOKIE, ЗА ДА ГО ПОМНИ БРАУЗЪРЪТ ПРИ КЛИКВАНЕ
+            Response.Cookies.Append("JwtToken", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false, // Сложи на true, ако тестваш по HTTPS, за HTTP е false
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddHours(2)
+            });
 
             return RedirectToAction("Index", "Home");
         }
 
-        // GET: Account/Register
         [HttpGet]
         public IActionResult Register()
         {
             return View();
         }
 
-        // POST: Account/Register
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(Customer model)
@@ -86,14 +89,13 @@ namespace OnlineBookShop.Controllers
             return View(model);
         }
 
-        // Logout
         public IActionResult Logout()
         {
-            Response.Headers.Remove("Authorization");
+            // ИЗТРИВАМЕ COOKIE-ТО ПРИ ИЗХОД
+            Response.Cookies.Delete("JwtToken");
             return RedirectToAction("Index", "Home");
         }
 
-        // Помощен метод за генериране на JWT Token
         private string GenerateJwtToken(Customer customer)
         {
             var claims = new[]

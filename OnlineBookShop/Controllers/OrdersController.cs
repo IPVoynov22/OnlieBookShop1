@@ -10,7 +10,7 @@ using OnlineBookShop.Models;
 
 namespace OnlineBookShop.Controllers
 {
-    [Authorize] // Всеки логнат потребител може да създава/преглежда поръчки
+    [Authorize]
     public class OrdersController : Controller
     {
         private readonly BookWorldDbContext _context;
@@ -20,7 +20,6 @@ namespace OnlineBookShop.Controllers
             _context = context;
         }
 
-        // GET: Orders (Админ вижда всички поръчки, потребителят вижда само своите)
         public async Task<IActionResult> Index()
         {
             if (User.IsInRole("Admin"))
@@ -29,7 +28,6 @@ namespace OnlineBookShop.Controllers
                 return View(await allOrders.ToListAsync());
             }
 
-            // Намираме имейла на логнатия потребител
             var userEmail = User.Identity?.Name;
             var userOrders = _context.Orders
                 .Include(o => o.Customer)
@@ -38,7 +36,6 @@ namespace OnlineBookShop.Controllers
             return View(await userOrders.ToListAsync());
         }
 
-        // GET: Orders/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -58,14 +55,12 @@ namespace OnlineBookShop.Controllers
             return View(order);
         }
 
-        // GET: Orders/Create
         public IActionResult Create()
         {
             ViewData["CustomerId"] = new SelectList(_context.Customers, "CustomerId", "Email");
             return View();
         }
 
-        // POST: Orders/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("OrderId,OrderDate,TotalAmount,OrderStatus,CustomerId")] Order order)
@@ -80,7 +75,6 @@ namespace OnlineBookShop.Controllers
             return View(order);
         }
 
-        // GET: Orders/Edit/5 (Само за Админ)
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
@@ -98,7 +92,6 @@ namespace OnlineBookShop.Controllers
             return View(order);
         }
 
-        // POST: Orders/Edit/5 (Само за Админ)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
@@ -133,7 +126,6 @@ namespace OnlineBookShop.Controllers
             return View(order);
         }
 
-        // GET: Orders/Delete/5 (Само за Админ)
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
@@ -153,7 +145,6 @@ namespace OnlineBookShop.Controllers
             return View(order);
         }
 
-        // POST: Orders/Delete/5 (Само за Админ)
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]

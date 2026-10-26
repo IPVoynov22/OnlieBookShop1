@@ -10,7 +10,7 @@ using OnlineBookShop.Models;
 
 namespace OnlineBookShop.Controllers
 {
-    [Authorize] // Всички методи изискват потребителят да е логнат
+    [Authorize]
     public class BooksController : Controller
     {
         private readonly BookWorldDbContext _context;
@@ -20,7 +20,7 @@ namespace OnlineBookShop.Controllers
             _context = context;
         }
 
-        // GET: Books (Поддържа филтриране по категория през Navbar-а)
+        // GET: Books
         public async Task<IActionResult> Index(string category)
         {
             var booksQuery = _context.Books.Include(b => b.Category).AsQueryable();
@@ -66,14 +66,17 @@ namespace OnlineBookShop.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create([Bind("BookId,Title,Author,Price,StockQuantity,CategoryId")] Book book)
+        public async Task<IActionResult> Create([Bind("Title,Author,Price,StockQuantity,CategoryId")] Book book)
         {
+            ModelState.Remove("Category");
+
             if (ModelState.IsValid)
             {
                 _context.Add(book);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+            
             ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName", book.CategoryId);
             return View(book);
         }
@@ -106,6 +109,8 @@ namespace OnlineBookShop.Controllers
             {
                 return NotFound();
             }
+
+            ModelState.Remove("Category");
 
             if (ModelState.IsValid)
             {

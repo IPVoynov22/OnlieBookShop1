@@ -1,31 +1,39 @@
 @model OnlineBookShop.Models.Category
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Edit Category";
 }
 
-<h1>Edit</h1>
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="hero-card shadow-sm border-0 p-4 p-md-5" style="background-color: var(--card-bg); border-radius: 16px;">
+            
+            <div class="mb-4">
+                <span class="text-uppercase small tracking-wider" style="color: var(--terracotta); font-weight: 600;">Admin Panel</span>
+                <h2 class="serif-text display-6 mt-1" style="color: var(--forest-green);">Edit Category</h2>
+                <p class="text-muted mt-2">Modify the category details below.</p>
+            </div>
 
-<h4>Category</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="CategoryId" />
-            <div class="form-group">
-                <label asp-for="CategoryName" class="control-label"></label>
-                <input asp-for="CategoryName" class="form-control" />
-                <span asp-validation-for="CategoryName" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+            <hr style="border-color: #DED8CC;" class="mb-4">
+
+            <form asp-action="Edit">
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <input type="hidden" asp-for="CategoryId" />
+
+                <div class="mb-4">
+                    <label asp-for="CategoryName" class="form-label fw-medium" style="color: var(--text-dark);">Category Name</label>
+                    <input asp-for="CategoryName" class="form-control" />
+                    <span asp-validation-for="CategoryName" class="text-danger small"></span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-5 pt-3 border-top" style="border-color: #DED8CC !important;">
+                    <a asp-action="Index" class="text-decoration-none fw-medium" style="color: var(--forest-green);">
+                        ← Back to List
+                    </a>
+                    <input type="submit" value="Save Changes" class="btn-forest" style="cursor: pointer; border: none; padding: 10px 24px; border-radius: 8px;" />
+                </div>
+            </form>
+
+        </div>
     </div>
 </div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-

@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<BookWorldDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. Настройка на JWT Bearer Authentication (Без Cookie Authentication)
+// 2. Настройка на JWT Bearer Authentication с поддръжка на Cookie за MVC
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
@@ -33,9 +33,15 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
     };
 
-    // Автоматично пренасочване към Login при липса на токен в MVC изглед
     options.Events = new JwtBearerEvents
     {
+        // Четем токена автоматично от бисквитката при всяко кликване в MVC
+        OnMessageReceived = context =>
+        {
+            context.Token = context.Request.Cookies["JwtToken"];
+            return Task.CompletedTask;
+        },
+        // Ако няма токен или е изтекъл, пренасочваме към Login страницата
         OnChallenge = context =>
         {
             context.HandleResponse();
