@@ -1,19 +1,22 @@
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using OnlineBookShop.Models;
-using System.Security.Claims;
 
 namespace OnlineBookShop.Controllers
 {
     public class AccountController : Controller
     {
         private readonly BookWorldDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public AccountController(BookWorldDbContext context)
+        public AccountController(BookWorldDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
         // GET: Account/Login
@@ -22,7 +25,7 @@ namespace OnlineBookShop.Controllers
             return View();
         }
 
-        // POST: Account/Login
+        // POST: Account/Login (Генерира JWT токен)
         [HttpPost]
         public async Task<IActionResult> Login(string email, string password)
         {
@@ -35,16 +38,11 @@ namespace OnlineBookShop.Controllers
                 return View();
             }
 
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, customer.Email),
-                new Claim(ClaimTypes.Role, customer.Role ?? "User"),
-                new Claim("FullName", $"{customer.FirstName} {customer.LastName}")
-            };
+            // Генериране на JWT Token с претенции (Claims)
+            var token = GenerateJwtToken(customer);
 
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+            // Запазване на токена в Header / Response за клиента
+            Response.Headers.Append("Authorization", "Bearer " + token);
 
             return RedirectToAction("Index", "Home");
         }
@@ -65,7 +63,6 @@ namespace OnlineBookShop.Controllers
             {
                 try
                 {
-                    // Check if email already exists in the database
                     var existingUser = await _context.Customers.FirstOrDefaultAsync(c => c.Email == model.Email);
                     if (existingUser != null)
                     {
@@ -73,8 +70,7 @@ namespace OnlineBookShop.Controllers
                         return View(model);
                     }
 
-                    // Set default role for new registrations
-                    model.Role = "User"; 
+                    model.Role = "User";
 
                     _context.Customers.Add(model);
                     await _context.SaveChangesAsync();
@@ -83,7 +79,6 @@ namespace OnlineBookShop.Controllers
                 }
                 catch (DbUpdateException)
                 {
-                    // Catch database constraint conflicts gracefully
                     ModelState.AddModelError("", "A database error occurred during registration. Please check your input data.");
                     return View(model);
                 }
@@ -92,10 +87,37 @@ namespace OnlineBookShop.Controllers
         }
 
         // Logout
-        public async Task<IActionResult> Logout()
+        public IActionResult Logout()
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            Response.Headers.Remove("Authorization");
             return RedirectToAction("Index", "Home");
+        }
+
+        // Помощен метод за генериране на JWT Token
+        private string GenerateJwtToken(Customer customer)
+        {
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, customer.Email),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.Name, customer.Email),
+                new Claim(ClaimTypes.Role, customer.Role ?? "User"),
+                new Claim("CustomerId", customer.CustomerId.ToString()),
+                new Claim("FullName", $"{customer.FirstName} {customer.LastName}")
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(2),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }
