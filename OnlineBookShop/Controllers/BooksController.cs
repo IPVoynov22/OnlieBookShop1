@@ -1,55 +1,49 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using OnlineBookShop.Models;
+using OnlineBookShop.Services;
 
 namespace OnlineBookShop.Controllers
 {
     [Authorize]
     public class BooksController : Controller
     {
-        private readonly BookWorldDbContext _context;
+        private readonly IBookService _bookService;
+        private readonly BookWorldDbContext _context; // Запазваме го временно заради Dropdown менютата за категориите (SelectList)
 
-        public BooksController(BookWorldDbContext context)
+        public BooksController(IBookService bookService, BookWorldDbContext context)
         {
+            _bookService = bookService;
             _context = context;
         }
 
-        // GET: Books
-        public async Task<IActionResult> Index(string category)
+        // GET: Books (с поддръжка на Търсене, Категория и Пагинация)
+        public async Task<IActionResult> Index(string? searchString, string? category, int pageNumber = 1)
         {
-            var booksQuery = _context.Books.Include(b => b.Category).AsQueryable();
+            int pageSize = 8; // Брой книги на страница в нашия бутик
 
-            if (!string.IsNullOrEmpty(category))
-            {
-                booksQuery = booksQuery.Where(b => b.Category.CategoryName == category);
-                ViewData["CurrentCategory"] = category;
-            }
+            var (books, totalPages) = await _bookService.GetBooksPagedAsync(searchString, category, pageNumber, pageSize);
 
-            return View(await booksQuery.ToListAsync());
+            ViewData["CurrentFilter"] = searchString;
+            ViewData["CurrentCategory"] = category;
+            ViewData["CurrentPage"] = pageNumber;
+            ViewData["TotalPages"] = totalPages;
+            ViewData["Categories"] = new SelectList(_context.Categories, "CategoryName", "CategoryName", category);
+
+            return View(books);
         }
 
         // GET: Books/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var book = await _context.Books
-                .Include(b => b.Category)
-                .FirstOrDefaultAsync(m => m.BookId == id);
-
-            if (book == null)
-            {
-                return NotFound();
-            }
+            var book = await _bookService.GetByIdAsync(id.Value);
+            if (book == null) return NotFound();
 
             return View(book);
         }
@@ -72,8 +66,7 @@ namespace OnlineBookShop.Controllers
 
             if (ModelState.IsValid)
             {
-                _context.Add(book);
-                await _context.SaveChangesAsync();
+                await _bookService.CreateAsync(book);
                 return RedirectToAction(nameof(Index));
             }
             
@@ -85,16 +78,11 @@ namespace OnlineBookShop.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var book = await _context.Books.FindAsync(id);
-            if (book == null)
-            {
-                return NotFound();
-            }
+            var book = await _bookService.GetByIdAsync(id.Value);
+            if (book == null) return NotFound();
+
             ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName", book.CategoryId);
             return View(book);
         }
@@ -105,10 +93,7 @@ namespace OnlineBookShop.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id, [Bind("BookId,Title,Author,Price,StockQuantity,CategoryId")] Book book)
         {
-            if (id != book.BookId)
-            {
-                return NotFound();
-            }
+            if (id != book.BookId) return NotFound();
 
             ModelState.Remove("Category");
 
@@ -116,12 +101,11 @@ namespace OnlineBookShop.Controllers
             {
                 try
                 {
-                    _context.Update(book);
-                    await _context.SaveChangesAsync();
+                    await _bookService.UpdateAsync(book);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!BookExists(book.BookId))
+                    if (await _bookService.GetByIdAsync(book.BookId) == null)
                     {
                         return NotFound();
                     }
@@ -140,18 +124,10 @@ namespace OnlineBookShop.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var book = await _context.Books
-                .Include(b => b.Category)
-                .FirstOrDefaultAsync(m => m.BookId == id);
-            if (book == null)
-            {
-                return NotFound();
-            }
+            var book = await _bookService.GetByIdAsync(id.Value);
+            if (book == null) return NotFound();
 
             return View(book);
         }
@@ -162,19 +138,8 @@ namespace OnlineBookShop.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var book = await _context.Books.FindAsync(id);
-            if (book != null)
-            {
-                _context.Books.Remove(book);
-            }
-
-            await _context.SaveChangesAsync();
+            await _bookService.DeleteAsync(id);
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool BookExists(int id)
-        {
-            return _context.Books.Any(e => e.BookId == id);
         }
     }
 }

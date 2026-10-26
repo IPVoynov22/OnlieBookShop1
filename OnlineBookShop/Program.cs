@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OnlineBookShop.Models;
+using OnlineBookShop.Services; // <-- Тук добавихме namespace-а за услугите
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<BookWorldDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. Настройка на JWT Bearer Authentication с поддръжка на Cookie за MVC
+// 2. Регистрация на Service Layer (Бизнес логиката за книгите)
+builder.Services.AddScoped<IBookService, BookService>(); // <-- Тук регистрирахме IBookService
+
+// 3. Настройка на JWT Bearer Authentication с поддръжка на Cookie за MVC
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];

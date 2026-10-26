@@ -1,70 +1,125 @@
 @model IEnumerable<OnlineBookShop.Models.Book>
 
 @{
-    ViewData["Title"] = "Books Catalog";
+    ViewData["Title"] = "Book Catalog";
+    int currentPage = ViewData["CurrentPage"] != null ? (int)ViewData["CurrentPage"] : 1;
+    int totalPages = ViewData["TotalPages"] != null ? (int)ViewData["TotalPages"] : 1;
+    string currentFilter = ViewData["CurrentFilter"] as string;
+    string currentCategory = ViewData["CurrentCategory"] as string;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="serif-text mb-0">Books catalog</h2>
-    @if (User.IsInRole("Admin"))
-    {
-        <a asp-action="Create" class="btn-forest">Add new book</a>
-    }
-</div>
+<div class="container mt-4 mb-5">
+    
+    <!-- Заглавие и бутон за добавяне (ако е Admin) -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span class="text-uppercase small tracking-wider" style="color: var(--terracotta); font-weight: 600;">Catalog</span>
+            <h2 class="serif-text display-6 mt-1" style="color: var(--forest-green);">Explore Our Books</h2>
+        </div>
+        @if (User.IsInRole("Admin"))
+        {
+            <a asp-action="Create" class="btn-forest text-decoration-none shadow-sm" style="padding: 10px 20px; border-radius: 8px;">
+                + Add New Book
+            </a>
+        }
+    </div>
 
-<table class="table">
-    <thead>
-    <tr>
-        <th>
-            @Html.DisplayNameFor(model => model.Title)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Author)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Price)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.StockQuantity)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Category)
-        </th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Title)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Author)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Price)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.StockQuantity)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Category.CategoryId)
-            </td>
-            <td>
-                @if (User.IsInRole("Admin"))
-                {
-                    <a asp-action="Edit" asp-route-id="@item.BookId">Edit</a> <span>|</span>
-                }
+    <!-- Търсачка и Филтри -->
+    <div class="hero-card shadow-sm border-0 p-4 mb-4" style="background-color: var(--card-bg); border-radius: 16px;">
+        <form asp-action="Index" method="get" class="row g-3 align-items-center">
+            <div class="col-md-5">
+                <label class="form-label small fw-medium text-muted">Search by Title or Author</label>
+                <input type="text" name="searchString" value="@currentFilter" class="form-control" placeholder="Type title or author..." style="border-radius: 8px;" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-medium text-muted">Filter by Category</label>
+                <select name="category" class="form-select" asp-items="ViewBag.Categories" style="border-radius: 8px;">
+                    <option value="">All Categories</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2 pt-2">
+                <button type="submit" class="btn-forest w-100 py-2" style="border: none; border-radius: 8px; font-weight: 500;">Filter</button>
+                <a asp-action="Index" class="btn btn-outline-secondary w-50 py-2" style="border-radius: 8px;">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Списък с книги (Таблица / Карти) -->
+    <div class="hero-card shadow-sm border-0 p-4" style="background-color: var(--card-bg); border-radius: 16px;">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr style="border-color: #DED8CC; color: var(--forest-green);">
+                        <th class="py-3">Title</th>
+                        <th class="py-3">Author</th>
+                        <th class="py-3">Category</th>
+                        <th class="py-3">Price</th>
+                        <th class="py-3">Stock</th>
+                        <th class="py-3 text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model) {
+                        <tr style="border-color: #DED8CC;">
+                            <td class="py-3 fw-medium" style="color: var(--text-dark);">
+                                @Html.DisplayFor(modelItem => item.Title)
+                            </td>
+                            <td class="py-3 text-muted">
+                                @Html.DisplayFor(modelItem => item.Author)
+                            </td>
+                            <td class="py-3">
+                                <span class="badge" style="background-color: #e3ede6; color: var(--forest-green); font-weight: 500; padding: 6px 12px; border-radius: 6px;">
+                                    @item.Category?.CategoryName
+                                </span>
+                            </td>
+                            <td class="py-3 fw-bold" style="color: var(--terracotta);">
+                                $@item.Price
+                            </td>
+                            <td class="py-3">
+                                @item.StockQuantity
+                            </td>
+                            <td class="py-3 text-end">
+                                <a asp-action="Details" asp-route-id="@item.BookId" class="btn btn-sm btn-outline-dark px-3 me-1" style="border-radius: 6px;">Details</a>
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <a asp-action="Edit" asp-route-id="@item.BookId" class="btn btn-sm btn-outline-secondary px-3 me-1" style="border-radius: 6px;">Edit</a>
+                                    <a asp-action="Delete" asp-route-id="@item.BookId" class="btn btn-sm px-3" style="background-color: #fae1dd; color: var(--terracotta); border-radius: 6px;">Delete</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Пагинация (Pagination Buttons) -->
+        @if (totalPages > 1)
+        {
+            <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top" style="border-color: #DED8CC !important;">
+                <span class="text-muted small">Page <strong>@currentPage</strong> of <strong>@totalPages</strong></span>
                 
-                <a asp-action="Details" asp-route-id="@item.BookId">Details</a>
+                <nav>
+                    <ul class="pagination mb-0">
+                        <!-- Previous Button -->
+                        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-pageNumber="@(currentPage - 1)" 
+                               asp-route-searchString="@currentFilter" 
+                               asp-route-category="@currentCategory" 
+                               style="border-radius: 6px 0 0 6px; color: var(--forest-green);">Previous</a>
+                        </li>
 
-                @if (User.IsInRole("Admin"))
-                {
-                    <span>|</span> <a asp-action="Delete" asp-route-id="@item.BookId">Delete</a>
-                }
-            </td>
-        </tr>
-    }
-    </tbody>
-</table>
+                        <!-- Next Button -->
+                        <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-pageNumber="@(currentPage + 1)" 
+                               asp-route-searchString="@currentFilter" 
+                               asp-route-category="@currentCategory" 
+                               style="border-radius: 0 6px 6px 0; color: var(--forest-green);">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>
