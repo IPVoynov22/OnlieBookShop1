@@ -10,9 +10,10 @@
             
             <h2 class="serif-text mb-4" style="color: var(--forest-green);">Edit Book</h2>
 
-            <form asp-action="Edit">
+            <form asp-action="Edit" method="post" enctype="multipart/form-data">
                 <div asp-validation-summary="All" class="text-danger mb-3"></div>
                 <input type="hidden" asp-for="BookId" />
+                <input type="hidden" asp-for="ImageUrl" /> <!-- Запазва пътя към текущата снимка -->
 
                 <div class="mb-3">
                     <label asp-for="Title" class="form-label fw-medium" style="color: var(--text-dark);"></label>
@@ -38,10 +39,23 @@
                     <span asp-validation-for="StockQuantity" class="text-danger small"></span>
                 </div>
 
-                <div class="mb-4">
+                <div class="mb-3">
                     <label asp-for="CategoryId" class="form-label fw-medium" style="color: var(--text-dark);">Category</label>
                     <select asp-for="CategoryId" class="form-select" asp-items="ViewBag.CategoryId"></select>
                     <span asp-validation-for="CategoryId" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-medium" style="color: var(--text-dark);">Book Cover Image</label>
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <div class="mb-2">
+                            <img src="@Model.ImageUrl" alt="Current Cover" class="img-thumbnail" style="max-height: 100px;" />
+                            <small class="text-muted d-block">Current cover image</small>
+                        </div>
+                    }
+                    <input type="file" name="imageFile" class="form-control" accept="image/jpeg,image/png,image/webp" />
+                    <small class="text-muted d-block mt-1">Upload a new file to replace the current one (.jpg, .jpeg, .png, .webp)</small>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top" style="border-color: #DED8CC !important;">

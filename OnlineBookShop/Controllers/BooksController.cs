@@ -1,7 +1,10 @@
 using System;
+using System.IO;
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using OnlineBookShop.Models;
@@ -24,7 +27,7 @@ namespace OnlineBookShop.Controllers
         // GET: Books (с поддръжка на Търсене, Категория и Пагинация)
         public async Task<IActionResult> Index(string? searchString, string? category, int pageNumber = 1)
         {
-            int pageSize = 8; // Брой книги на страница в нашия бутик
+            int pageSize = 8; 
 
             var (books, totalPages) = await _bookService.GetBooksPagedAsync(searchString, category, pageNumber, pageSize);
 
@@ -60,12 +63,44 @@ namespace OnlineBookShop.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create([Bind("Title,Author,Price,StockQuantity,CategoryId")] Book book)
+        public async Task<IActionResult> Create([Bind("Title,Author,Price,StockQuantity,CategoryId")] Book book, IFormFile? imageFile)
         {
             ModelState.Remove("Category");
 
             if (ModelState.IsValid)
             {
+                if (imageFile != null && imageFile.Length > 0)
+                {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+                    var extension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+
+                    if (allowedExtensions.Contains(extension))
+                    {
+                        var fileName = Guid.NewGuid().ToString() + extension;
+                        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "books");
+
+                        if (!Directory.Exists(uploadsFolder))
+                        {
+                            Directory.CreateDirectory(uploadsFolder);
+                        }
+
+                        var filePath = Path.Combine(uploadsFolder, fileName);
+
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await imageFile.CopyToAsync(stream);
+                        }
+
+                        book.ImageUrl = "/images/books/" + fileName;
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("ImageUrl", "Позволени са само файлове с формат .jpg, .jpeg, .png или .webp");
+                        ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName", book.CategoryId);
+                        return View(book);
+                    }
+                }
+
                 await _bookService.CreateAsync(book);
                 return RedirectToAction(nameof(Index));
             }
@@ -91,7 +126,7 @@ namespace OnlineBookShop.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Edit(int id, [Bind("BookId,Title,Author,Price,StockQuantity,CategoryId")] Book book)
+        public async Task<IActionResult> Edit(int id, [Bind("BookId,Title,Author,Price,StockQuantity,CategoryId,ImageUrl")] Book book, IFormFile? imageFile)
         {
             if (id != book.BookId) return NotFound();
 
@@ -101,6 +136,41 @@ namespace OnlineBookShop.Controllers
             {
                 try
                 {
+                    if (imageFile != null && imageFile.Length > 0)
+                    {
+                        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+                        var extension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+
+                        if (allowedExtensions.Contains(extension))
+                        {
+                            var fileName = Guid.NewGuid().ToString() + extension;
+                            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "books");
+
+                            if (!Directory.Exists(uploadsFolder))
+                            {
+                                Directory.CreateDirectory(uploadsFolder);
+                            }
+
+                            var filePath = Path.Combine(uploadsFolder, fileName);
+
+                            using (var stream = new FileStream(filePath, FileMode.Create))
+                            {
+                                await imageFile.CopyToAsync(stream);
+                            }
+
+                            if (!string.IsNullOrEmpty(book.ImageUrl))
+                            {
+                                var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", book.ImageUrl.TrimStart('/'));
+                                if (System.IO.File.Exists(oldFilePath))
+                                {
+                                    System.IO.File.Delete(oldFilePath);
+                                }
+                            }
+
+                            book.ImageUrl = "/images/books/" + fileName;
+                        }
+                    }
+
                     await _bookService.UpdateAsync(book);
                 }
                 catch (DbUpdateConcurrencyException)
@@ -138,7 +208,21 @@ namespace OnlineBookShop.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            await _bookService.DeleteAsync(id);
+            var book = await _bookService.GetByIdAsync(id);
+            if (book != null)
+            {
+                if (!string.IsNullOrEmpty(book.ImageUrl))
+                {
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", book.ImageUrl.TrimStart('/'));
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        System.IO.File.Delete(filePath);
+                    }
+                }
+
+                await _bookService.DeleteAsync(id);
+            }
+
             return RedirectToAction(nameof(Index));
         }
     }
