@@ -40,11 +40,10 @@ namespace OnlineBookShop.Controllers
 
             var token = GenerateJwtToken(customer);
 
-            // ЗАПАЗВАМЕ ТОКЕНА В COOKIE, ЗА ДА ГО ПОМНИ БРАУЗЪРЪТ ПРИ КЛИКВАНЕ
             Response.Cookies.Append("JwtToken", token, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = false, // Сложи на true, ако тестваш по HTTPS, за HTTP е false
+                Secure = false,
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTimeOffset.UtcNow.AddHours(2)
             });
@@ -73,6 +72,7 @@ namespace OnlineBookShop.Controllers
                         return View(model);
                     }
 
+                    
                     model.Role = "User";
 
                     _context.Customers.Add(model);
@@ -91,7 +91,6 @@ namespace OnlineBookShop.Controllers
 
         public IActionResult Logout()
         {
-            // ИЗТРИВАМЕ COOKIE-ТО ПРИ ИЗХОД
             Response.Cookies.Delete("JwtToken");
             return RedirectToAction("Index", "Home");
         }

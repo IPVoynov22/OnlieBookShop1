@@ -31,11 +31,17 @@
                         <span asp-validation-for="Email" class="text-danger small"></span>
                     </div>
 
+                   
+                    <div class="mb-3">
+                        <label asp-for="Phone" class="form-label fw-bold">Phone Number (Optional)</label>
+                        <input asp-for="Phone" type="tel" class="form-control" placeholder="e.g. 0888888888" pattern="\d*" title="Please enter only numbers" />
+                        <span asp-validation-for="Phone" class="text-danger small"></span>
+                    </div>
+
                     <div class="mb-3">
                         <label asp-for="PasswordHash" class="form-label fw-bold">Password</label>
                         <input asp-for="PasswordHash" type="password" class="form-control" placeholder="Enter password" />
                         
-                        <!-- Елегантна информационна кутия с изискванията за парола -->
                         <div class="form-text text-muted mt-2 p-3 rounded border" style="background-color: #F7F5F0;">
                             <span class="d-block fw-semibold mb-1" style="color: #2B2B2B;">Password requirements:</span>
                             <ul class="mb-0 ps-3 small text-secondary">

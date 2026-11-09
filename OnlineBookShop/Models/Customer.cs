@@ -20,6 +20,9 @@ public partial class Customer
     [EmailAddress(ErrorMessage = "Invalid email format.")]
     public string Email { get; set; } = null!;
 
+
+    [RegularExpression(@"^\d+$", ErrorMessage = "Phone number must contain only digits.")]
+    [StringLength(15, MinimumLength = 6, ErrorMessage = "Phone number must be between 6 and 15 digits.")]
     public string? Phone { get; set; }
     
     [Required(ErrorMessage = "Password is required.")]

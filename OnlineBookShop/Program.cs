@@ -12,7 +12,7 @@ builder.Services.AddDbContext<BookWorldDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // 2. Регистрация на Service Layer (Бизнес логиката за книгите)
-builder.Services.AddScoped<IBookService, BookService>(); // <-- Тук регистрирахме IBookService
+builder.Services.AddScoped<IBookService, BookService>(); // <-- Тук регистрираme IBookService
 
 // 3. Настройка на JWT Bearer Authentication с поддръжка на Cookie за MVC
 var jwtKey = builder.Configuration["Jwt:Key"];
