@@ -18,30 +18,34 @@ namespace OnlineBookShop.Services
                 .Include(b => b.Category)
                 .AsQueryable();
 
-            // Филтриране по категория (ако е подадена)
             if (!string.IsNullOrEmpty(category))
             {
                 query = query.Where(b => b.Category.CategoryName == category);
             }
 
-            // Търсене по заглавие или автор
             if (!string.IsNullOrEmpty(searchString))
             {
                 query = query.Where(b => b.Title.Contains(searchString) || b.Author.Contains(searchString));
             }
 
-            // Общ брой записи за изчисляване на страниците
             int totalBooks = await query.CountAsync();
             int totalPages = (int)Math.Ceiling(totalBooks / (double)pageSize);
             if (totalPages == 0) totalPages = 1;
 
-            // Пагинация
             var books = await query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
             return (books, totalPages);
+        }
+
+  
+        public async Task<IEnumerable<Book>> GetAllBooksAsync()
+        {
+            return await _context.Books
+                .Include(b => b.Category)
+                .ToListAsync();
         }
 
         public async Task<Book?> GetByIdAsync(int id)

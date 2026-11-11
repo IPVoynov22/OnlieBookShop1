@@ -30,6 +30,11 @@ public class HomeController : Controller
     [AllowAnonymous]
     public IActionResult Error()
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        var requestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
+        
+     
+        _logger.LogError("An unhandled exception occurred. Request ID: {RequestId}", requestId);
+
+        return View(new ErrorViewModel { RequestId = requestId });
     }
 }

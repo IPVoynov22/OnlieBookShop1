@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -16,7 +17,7 @@ namespace OnlineBookShop.Controllers
     public class BooksController : Controller
     {
         private readonly IBookService _bookService;
-        private readonly BookWorldDbContext _context; // Запазваме го временно заради Dropdown менютата за категориите (SelectList)
+        private readonly BookWorldDbContext _context;
 
         public BooksController(IBookService bookService, BookWorldDbContext context)
         {
@@ -24,7 +25,7 @@ namespace OnlineBookShop.Controllers
             _context = context;
         }
 
-        // GET: Books (с поддръжка на Търсене, Категория и Пагинация)
+        // GET: Books
         public async Task<IActionResult> Index(string? searchString, string? category, int pageNumber = 1)
         {
             int pageSize = 8; 
@@ -38,6 +39,35 @@ namespace OnlineBookShop.Controllers
             ViewData["Categories"] = new SelectList(_context.Categories, "CategoryName", "CategoryName", category);
 
             return View(books);
+        }
+
+        // Експорт към Excel (Само за Admin)
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ExportToExcel()
+        {
+            var books = await _bookService.GetAllBooksAsync();
+
+            var builder = new StringBuilder();
+            builder.AppendLine("ID,Title,Author,Price,Stock,Category");
+
+            foreach (var b in books)
+            {
+                var categoryName = b.Category?.CategoryName ?? "N/A";
+                builder.AppendLine($"{b.BookId},\"{b.Title}\",\"{b.Author}\",{b.Price},{b.StockQuantity},\"{categoryName}\"");
+            }
+
+            byte[] fileBytes = Encoding.UTF8.GetBytes(builder.ToString());
+            return File(fileBytes, "text/csv", $"Books_Report_{DateTime.Now:yyyyMMdd}.csv");
+        }
+
+        // Експорт към PDF (Само за Admin)
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ExportToPdf()
+        {
+            var books = await _bookService.GetAllBooksAsync();
+            return View("ReportPdf", books);
         }
 
         // GET: Books/Details/5
