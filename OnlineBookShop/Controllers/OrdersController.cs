@@ -1,168 +1,190 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using OnlineBookShop.Models;
+using OnlineBookShop.Services;
 
 namespace OnlineBookShop.Controllers
 {
-    [Authorize]
     public class OrdersController : Controller
     {
+        private readonly OrderService _orderService;
         private readonly BookWorldDbContext _context;
+        private const string CartSessionKey = "CartSession";
 
-        public OrdersController(BookWorldDbContext context)
+        public OrdersController(OrderService orderService, BookWorldDbContext context)
         {
+            _orderService = orderService;
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        // Помощен метод за четене на количката от Session
+        private List<CartItemViewModel> GetCart()
         {
-            if (User.IsInRole("Admin"))
+            var sessionData = HttpContext.Session.GetString(CartSessionKey);
+            if (string.IsNullOrEmpty(sessionData))
             {
-                var allOrders = _context.Orders.Include(o => o.Customer);
-                return View(await allOrders.ToListAsync());
+                return new List<CartItemViewModel>();
             }
-
-            var userEmail = User.Identity?.Name;
-            var userOrders = _context.Orders
-                .Include(o => o.Customer)
-                .Where(o => o.Customer.Email == userEmail);
-
-            return View(await userOrders.ToListAsync());
+            return JsonSerializer.Deserialize<List<CartItemViewModel>>(sessionData) ?? new List<CartItemViewModel>();
         }
 
-        public async Task<IActionResult> Details(int? id)
+        // Помощен метод за записване на количката в Session
+        private void SaveCart(List<CartItemViewModel> cart)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var order = await _context.Orders
-                .Include(o => o.Customer)
-                .FirstOrDefaultAsync(m => m.OrderId == id);
-
-            if (order == null)
-            {
-                return NotFound();
-            }
-
-            return View(order);
+            HttpContext.Session.SetString(CartSessionKey, JsonSerializer.Serialize(cart));
         }
 
-        public IActionResult Create()
+        //  Преглед на количката
+        public IActionResult Cart()
         {
-            ViewData["CustomerId"] = new SelectList(_context.Customers, "CustomerId", "Email");
+            var cart = GetCart();
+            return View(cart);
+        }
+
+        //  Добавяне на книга в количката
+        [HttpPost]
+        public async Task<IActionResult> AddToCart(int bookId, int quantity = 1)
+        {
+            var book = await _context.Books.FindAsync(bookId);
+            if (book == null || book.StockQuantity < quantity)
+            {
+                TempData["Error"] = "Book is out of stock or not found.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var cart = GetCart();
+            var cartItem = cart.FirstOrDefault(i => i.BookId == bookId);
+
+            if (cartItem != null)
+            {
+                cartItem.Quantity += quantity;
+            }
+            else
+            {
+                cart.Add(new CartItemViewModel
+                {
+                    BookId = book.BookId,
+                    Title = book.Title,
+                    Price = book.Price,
+                    Quantity = quantity
+                });
+            }
+
+            SaveCart(cart);
+            return RedirectToAction("Cart");
+        }
+
+        //  Премахване на артикул от количката
+        public IActionResult RemoveFromCart(int bookId)
+        {
+            var cart = GetCart();
+            cart.RemoveAll(i => i.BookId == bookId);
+            SaveCart(cart);
+            return RedirectToAction("Cart");
+        }
+
+        // GET: Checkout (Форма за попълване на данни и плащане)
+        [HttpGet]
+        public IActionResult Checkout()
+        {
+            var cart = GetCart();
+            if (!cart.Any())
+            {
+                TempData["Error"] = "Your cart is empty.";
+                return RedirectToAction("Cart");
+            }
+
+            var model = new CheckoutViewModel
+            {
+                CartItems = cart
+            };
+
+            return View(model);
+        }
+
+        //  POST: Checkout (Финализиране и създаване на поръчка)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Checkout(CheckoutViewModel model)
+        {
+            var cart = GetCart();
+            if (!cart.Any())
+            {
+                return RedirectToAction("Cart");
+            }
+
+            model.CartItems = cart;
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            // Преобразуваме артикулите от количката към OrderItem модели за сървиса
+            var orderItems = cart.Select(i => new OrderItem
+            {
+                BookId = i.BookId,
+                Quantity = i.Quantity,
+                UnitPrice = i.Price
+            }).ToList();
+
+            // Извикваме сървиса за създаване на поръчката и транзакцията
+            var success = await _orderService.CreateOrderAsync(
+                model.FirstName, 
+                model.LastName, 
+                model.Email, 
+                model.Phone, 
+                orderItems
+            );
+
+            if (!success)
+            {
+                ModelState.AddModelError("", "Order could not be created. Some books might be out of stock.");
+                return View(model);
+            }
+
+            // Изчистваме количката при успешна поръчка
+            HttpContext.Session.Remove(CartSessionKey);
+
+            TempData["Success"] = "Your order was successfully placed and is pending approval!";
+            return RedirectToAction("OrderConfirmation");
+        }
+
+        //  Страница за успешна поръчка
+        public IActionResult OrderConfirmation()
+        {
             return View();
         }
 
+        // ==========================================
+        // АДМИНИСТРАТОРСКИ ПАНЕЛ ЗА ПОРЪЧКИ
+        // ==========================================
+
+        //  Списък с всички поръчки за админа
+        [Authorize] // Само за оторизирани потребители (администратори)
+        public async Task<IActionResult> AdminOrders()
+        {
+            var orders = await _orderService.GetAllOrdersAsync();
+            return View(orders);
+        }
+
+        //  Одобряване на поръчка
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("OrderId,OrderDate,TotalAmount,OrderStatus,CustomerId")] Order order)
+        [Authorize]
+        public async Task<IActionResult> Approve(int id)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(order);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["CustomerId"] = new SelectList(_context.Customers, "CustomerId", "Email", order.CustomerId);
-            return View(order);
+            await _orderService.ApproveOrderAsync(id);
+            return RedirectToAction("AdminOrders");
         }
 
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null)
-            {
-                return NotFound();
-            }
-            ViewData["CustomerId"] = new SelectList(_context.Customers, "CustomerId", "Email", order.CustomerId);
-            return View(order);
-        }
-
+        //  Отхвърляне на поръчка (и възстановяване на склада)
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Edit(int id, [Bind("OrderId,OrderDate,TotalAmount,OrderStatus,CustomerId")] Order order)
+        [Authorize]
+        public async Task<IActionResult> Reject(int id)
         {
-            if (id != order.OrderId)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(order);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!OrderExists(order.OrderId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["CustomerId"] = new SelectList(_context.Customers, "CustomerId", "Email", order.CustomerId);
-            return View(order);
-        }
-
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var order = await _context.Orders
-                .Include(o => o.Customer)
-                .FirstOrDefaultAsync(m => m.OrderId == id);
-            if (order == null)
-            {
-                return NotFound();
-            }
-
-            return View(order);
-        }
-
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var order = await _context.Orders.FindAsync(id);
-            if (order != null)
-            {
-                _context.Orders.Remove(order);
-            }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool OrderExists(int id)
-        {
-            return _context.Orders.Any(e => e.OrderId == id);
+            await _orderService.RejectOrderAsync(id);
+            return RedirectToAction("AdminOrders");
         }
     }
 }

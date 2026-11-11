@@ -55,7 +55,15 @@
                             <span class="small text-muted me-2">Hello, @User.Identity.Name</span>
                             @if (User.IsInRole("Admin"))
                             {
-                                <a class="btn btn-sm btn-outline-dark" asp-controller="Categories" asp-action="Index">Admin Panel</a>
+                                <div class="dropdown me-2">
+                                    <button class="btn btn-sm btn-outline-dark dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Admin Panel
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" asp-controller="Categories" asp-action="Index">Manage Categories</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Orders" asp-action="AdminOrders">Manage Orders</a></li>
+                                    </ul>
+                                </div>
                             }
                             <a class="text-dark fs-5" asp-controller="Account" asp-action="Logout" title="Изход">
                                 <i class="bi bi-box-arrow-right"></i>
@@ -68,6 +76,7 @@
                             </a>
                         }
 
+                        <!-- Линк към количката -->
                         <a class="text-dark fs-5 position-relative" asp-controller="Orders" asp-action="Cart" title="Количка">
                             <i class="bi bi-bag"></i>
                         </a>

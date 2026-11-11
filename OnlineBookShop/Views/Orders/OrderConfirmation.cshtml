@@ -1,0 +1,13 @@
+@{
+    ViewData["Title"] = "Order Confirmation";
+}
+
+<div class="container mt-5 text-center">
+    <div class="alert alert-success p-5 shadow-sm">
+        <h1 class="display-4">Thank You for Your Order!</h1>
+        <p class="lead mt-3">Your order has been successfully placed and is currently pending administrator approval.</p>
+        <hr class="my-4">
+        <p>You can check your status or continue browsing our catalog.</p>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary btn-lg mt-3">Back to Home</a>
+    </div>
+</div>

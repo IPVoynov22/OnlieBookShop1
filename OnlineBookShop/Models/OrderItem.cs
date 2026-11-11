@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace OnlineBookShop.Models;
+﻿namespace OnlineBookShop.Models;
 
 public partial class OrderItem
 {

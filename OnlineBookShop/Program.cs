@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OnlineBookShop.Models;
-using OnlineBookShop.Services; // <-- Тук добавихме namespace-а за услугите
+using OnlineBookShop.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,10 +11,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<BookWorldDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. Регистрация на Service Layer (Бизнес логиката за книгите)
-builder.Services.AddScoped<IBookService, BookService>(); // <-- Тук регистрираme IBookService
+// 2. Регистрация на Service Layer (Бизнес логиката)
+builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<OrderService>(); 
 
-// 3. Настройка на JWT Bearer Authentication с поддръжка на Cookie за MVC
+// 3. Добавяне на Session (Необходимо за пазаруването и количката)
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Сесията пази количката 30 минути
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+// 4. Настройка на JWT Bearer Authentication с поддръжка на Cookie за MVC
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
@@ -71,6 +80,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+// ВАЖНО: Session middleware трябва да бъде след UseRouting и преди UseAuthentication!
+app.UseSession();
 
 // Включване на JWT Authentication & Authorization
 app.UseAuthentication();

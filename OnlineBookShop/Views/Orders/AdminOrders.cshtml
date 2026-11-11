@@ -1,0 +1,67 @@
+@model IEnumerable<OnlineBookShop.Models.Order>
+
+@{
+    ViewData["Title"] = "Manage Orders";
+}
+
+<div class="container mt-4">
+    <h2>Admin Panel - Manage Orders</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info mt-3">No orders found.</div>
+    }
+    else
+    {
+        <table class="table table-bordered table-striped mt-3">
+            <thead class="table-dark">
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Total Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model)
+                {
+                    <tr>
+                        <td>@order.OrderId</td>
+                        <td>
+                            @if (order.Customer != null)
+                            {
+                                @($"{order.Customer.FirstName} {order.Customer.LastName}")
+                                <br />
+                                <small class="text-muted">@order.Customer.Email</small>
+                            }
+                        </td>
+                        <td>@order.OrderDate?.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>$@order.TotalAmount.ToString("F2")</td>
+                        <td>
+                            <span class="badge @(order.OrderStatus == "Approved" ? "bg-success" : order.OrderStatus == "Rejected" ? "bg-danger" : "bg-warning text-dark")">
+                                @order.OrderStatus
+                            </span>
+                        </td>
+                        <td>
+                            @if (order.OrderStatus == "Pending")
+                            {
+                                <form asp-action="Approve" asp-route-id="@order.OrderId" method="post" style="display:inline;">
+                                    <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                </form>
+                                <form asp-action="Reject" asp-route-id="@order.OrderId" method="post" style="display:inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No actions available</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
